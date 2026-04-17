@@ -1,54 +1,51 @@
 <?php
 session_start();
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-include __DIR__ . '/../components/connect.php';
+include 'connect.php';
 
 $warning_msg = [];
 $success_msg = [];
 
-$seller_id = $_SESSION['seller_id'] ?? '';
+$user_id = $_SESSION['user_id'] ?? '';
 
-if($seller_id == ''){
-   header('location:login.php');
-   exit;
+if($user_id == ''){
+    header('location:login.php');
+    exit;
 }
 
 /* FETCH PROFILE FOR DISPLAY */
-$select_profile = $conn->prepare("SELECT * FROM sellers WHERE id = ?");
-$select_profile->execute([$seller_id]);
+$select_profile = $conn->prepare("SELECT * FROM users WHERE id = ?");
+$select_profile->execute([$user_id]);
 $fetch_profile = $select_profile->fetch(PDO::FETCH_ASSOC) ?: [];
 
 if (isset($_POST['update'])) {
 
-   $select_seller = $conn->prepare("SELECT * FROM sellers WHERE id = ?");
-   $select_seller->execute([$seller_id]);
-   $fetch_seller = $select_seller->fetch(PDO::FETCH_ASSOC);
+   $select_user = $conn->prepare("SELECT * FROM users WHERE id = ?");
+   $select_user->execute([$user_id]);
+   $fetch_user = $select_user->fetch(PDO::FETCH_ASSOC);
 
-   $prev_pass = $fetch_seller['password'];
-   $prev_img = $fetch_seller['image'];
+   $prev_pass = $fetch_user['password'];
+   $prev_img = $fetch_user['image'];
 
    $name = filter_var($_POST['name'], FILTER_SANITIZE_STRING);
    $email = filter_var($_POST['email'], FILTER_SANITIZE_STRING);
 
    /* UPDATE NAME */
    if(!empty($name)){
-        $update_name = $conn->prepare("UPDATE sellers SET name = ? WHERE id = ?");
-        $update_name->execute([$name, $seller_id]);
+        $update_name = $conn->prepare("UPDATE users SET name = ? WHERE id = ?");
+        $update_name->execute([$name, $user_id]);
         $success_msg[] ='name updated successfully';
    }
 
    /* UPDATE EMAIL */
    if(!empty($email)){
-        $select_email = $conn->prepare("SELECT email FROM sellers WHERE email = ? AND id != ?");
-        $select_email->execute([$email, $seller_id]);
+        $select_email = $conn->prepare("SELECT email FROM users WHERE email = ? AND id != ?");
+        $select_email->execute([$email, $user_id]);
 
         if($select_email->rowCount() > 0){
            $warning_msg[] ='email already exist';
         }else{
-            $update_email = $conn->prepare("UPDATE sellers SET email = ? WHERE id = ?");
-            $update_email->execute([$email, $seller_id ]);
+            $update_email = $conn->prepare("UPDATE users SET email = ? WHERE id = ?");
+            $update_email->execute([$email, $user_id ]);
             $success_msg[] ='email updated successfully';
         }
    }
@@ -71,8 +68,8 @@ if (isset($_POST['update'])) {
         if($image_size > 2000000){
             $warning_msg[] ='image size is too large';
         }else{
-            $update_image = $conn->prepare("UPDATE sellers SET image = ? WHERE id = ?");
-            $update_image->execute([$rename, $seller_id]);
+            $update_image = $conn->prepare("UPDATE users SET image = ? WHERE id = ?");
+            $update_image->execute([$rename, $user_id]);
             move_uploaded_file($image_tmp_name, $image_folder);
             $success_msg[] ='image updated successfully';
         }
@@ -93,14 +90,12 @@ if (isset($_POST['update'])) {
         }elseif($new_pass != $c_pass){
             $warning_msg[] = 'confirm password not matched';
         }else{
-            $update_pass = $conn->prepare("UPDATE sellers SET password = ? WHERE id = ?");
-            $update_pass->execute([$new_pass, $seller_id ]);
+            $update_pass = $conn->prepare("UPDATE users SET password = ? WHERE id = ?");
+            $update_pass->execute([$new_pass, $user_id ]);
             $success_msg[] ='password updated successfully';
         }
    }
 }
-
-
 ?>
 
 <!DOCTYPE html>
@@ -109,31 +104,24 @@ if (isset($_POST['update'])) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Boxicons -->
 <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">
-
-<!-- Bootstrap Icons -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css">
+<link rel="stylesheet" href="../css/user_style.css?v=<?= time(); ?>">
 
-<!-- Custom CSS -->
-<link rel="stylesheet" href="../css/admin_style.css?v=<?= time(); ?>">
-
-<title>Cosmika A Cosmetic Website Template</title>
+<title>Update Profile | Cosmika</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
 </head>
 <body>
 
-<?php include __DIR__ . '/../components/admin_header.php'; ?>
+<?php include 'user_header.php'; ?>
 
 <div class="banner">
     <div class="detail">
-      <h1>update profile</h1>
-      <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Laudantium <br>
-        modi neque aut, voluptatem saepe non nemo sequi quas, animi reiciendis <br>
-        vitae doloremque sed facilis est illo quisquam fugit obcaecati omnis.</p>
-         <span><a href="dashboard.php">dashboard</a><i class="bx bx-right-arrow-alt"></i>update profile</span>
+        <h1>update profile</h1>
+        <p>Update your account information.</p>
+        <span><a href="home.php">Home</a> → update profile</span>
     </div>
 </div>
-
 
 <div class="form-container user-form" style="margin: 20px 300px;">
 <form action="" method="post" enctype="multipart/form-data" class="register">
@@ -150,14 +138,14 @@ if (isset($_POST['update'])) {
                 <p>Your name</p>
                 <input type="text" name="name"
                 value="<?= htmlspecialchars($fetch_profile['name'] ?? '') ?>"
-                maxlength="50" class="box">
+                maxlength="50" required class="box">
             </div>
 
             <div class="input-field">
                 <p>Your email</p>
                 <input type="email" name="email"
                 value="<?= htmlspecialchars($fetch_profile['email'] ?? '') ?>"
-                maxlength="100"  class="box">
+                maxlength="100" required class="box">
             </div>
 
             <div class="input-field">
@@ -188,36 +176,16 @@ if (isset($_POST['update'])) {
 </form>
 </div>
 
+<?php include 'user_footer.php'; ?>
 
-
-
-
-
-
-<?php include __DIR__ . '/../components/admin_footer.php'; ?>
-
-<!-- SweetAlert -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
 <script>
 <?php if(!empty($warning_msg)): ?>
-    swal({
-        title: "Oops!",
-        text: "<?= implode("\\n", $warning_msg); ?>",
-        icon: "error",
-        button: "Ok",
-    });
+swal("Oops!", "<?= implode(', ', $warning_msg); ?>", "error");
 <?php elseif(!empty($success_msg)): ?>
-    swal({
-        title: "Success!",
-        text: "<?= implode("\\n", $success_msg); ?>",
-        icon: "success",
-        button: "Ok",
-    });
+swal("Success!", "<?= implode(', ', $success_msg); ?>", "success");
 <?php endif; ?>
 </script>
 
-<script src="../js/admin_script.js"></script>
-
-<?php include __DIR__ . '/../components/alert.php'; ?>
+<script src="../js/user_script.js"></script>
 </body>
 </html>

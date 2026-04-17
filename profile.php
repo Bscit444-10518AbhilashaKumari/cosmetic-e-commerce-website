@@ -3,33 +3,32 @@ session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-include __DIR__ . '/../components/connect.php';
+include 'connect.php';
 
 $warning_msg = [];
 $success_msg = [];
 
-// check seller login
-$seller_id = $_SESSION['seller_id'] ?? '';
-if($seller_id == ''){
-   header('location:login.php');
-   exit;
+$user_id = $_SESSION['user_id'] ?? '';
+
+if($user_id == ''){
+    header('location:login.php');
+    exit;
 }
 
-/* ---------------- PROFILE ---------------- */
-$select_profile = $conn->prepare("SELECT * FROM sellers WHERE id = ?");
-$select_profile->execute([$seller_id]);
+/* ✅ FETCH USER PROFILE (IMPORTANT FIX) */
+$select_profile = $conn->prepare("SELECT * FROM users WHERE id = ?");
+$select_profile->execute([$user_id]);
 $fetch_profile = $select_profile->fetch(PDO::FETCH_ASSOC);
 
-/* ---------------- PRODUCTS COUNT ---------------- */
-$select_product = $conn->prepare("SELECT * FROM products WHERE seller_id = ?");
-$select_product->execute([$seller_id]);
-$total_product = $select_product->rowCount();
-
-/* ---------------- ORDERS COUNT ---------------- */
-$select_order = $conn->prepare("SELECT * FROM `orders` WHERE seller_id = ?");
-$select_order->execute([$seller_id]);
+/* ✅ ORDER COUNT */
+$select_order = $conn->prepare("SELECT * FROM orders WHERE user_id = ?");
+$select_order->execute([$user_id]);
 $total_order = $select_order->rowCount();
 
+/* ❌ FIXED TYPO: FRPM → FROM */
+$select_message = $conn->prepare("SELECT * FROM message WHERE user_id = ?");
+$select_message->execute([$user_id]);
+$total_message = $select_message->rowCount();
 ?>
 
 <!DOCTYPE html>
@@ -41,47 +40,54 @@ $total_order = $select_order->rowCount();
 <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css">
 
-<link rel="stylesheet" href="../css/admin_style.css?v=<?= time(); ?>">
+<link rel="stylesheet" href="../css/user_style.css?v=<?= time(); ?>">
 
-<title>Seller Profile</title>
+<title>Cosmika Profile</title>
 </head>
 <body>
 
-<?php include __DIR__ . '/../components/admin_header.php'; ?>
+<?php include 'user_header.php'; ?>
 
 <div class="banner">
     <div class="detail">
-        <h1>My Profile</h1>
-        <span>
-            <a href="dashboard.php">home</a>
-            <i class="bx bx-right-arrow-alt"></i>
-            my profile
-        </span>
+        <h1>profile</h1>
+        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit.</p>
+        <span><a href="home.php">home</a><i class="bx bx-right-arrow-alt"></i>profile</span>
     </div>
 </div>
 
-<div class="profile">
-
+<div class="profile user-form">
     <div class="heading">
-        <h1>Seller Profile</h1>
-        <img src="../images/separator.png" alt="">
+        <h1>profile details</h1>
     </div>
 
     <div class="details">
 
-        <!-- USER CARD -->
         <div class="user">
 
-            <?php if($fetch_profile){ ?>
-                <img src="../uploaded_files/<?= $fetch_profile['image']; ?>">
-                <h3><?= $fetch_profile['name']; ?></h3>
-            <?php } ?>
+            <!-- ✅ SAFE IMAGE FETCH -->
+           <?php
+$image_path = "../images/default.png";
 
-            <p>Seller</p>
-            <a href="update.php" class="btn">Update Profile</a>
+if(!empty($fetch_profile['image'])){
+    $file = "../uploaded_files/" . $fetch_profile['image'];
+
+    if(file_exists($file)){
+        $image_path = $file;
+    }
+}
+?>
+
+<img src="<?= $image_path ?>" alt="Profile Image">
+
+            <!-- ❌ FIX QUOTE BUG -->
+            <h3><?= htmlspecialchars($fetch_profile['name']); ?></h3>
+
+            <p>user</p>
+
+            <a href="update.php" class="btn">update profile</a>
         </div>
 
-        <!-- STATS -->
         <div class="box-container">
 
             <div class="box">
@@ -89,15 +95,15 @@ $total_order = $select_order->rowCount();
                     <i class="bx bxs-food-menu"></i>
                     <h3><?= $total_order; ?></h3>
                 </div>
-                <a href="../components/order.php" class="btn">View Orders</a>
+                <a href="order.php" class="btn">view orders</a>
             </div>
 
             <div class="box">
                 <div class="flex">
-                    <i class="bx bxs-package"></i>
-                    <h3><?= $total_product; ?></h3>
+                    <i class="bx bxs-chat"></i>
+                    <h3><?= $total_message; ?></h3>
                 </div>
-                <a href="view_product.php" class="btn">View Products</a>
+                <a href="contact.php" class="btn">send message</a>
             </div>
 
         </div>
@@ -105,30 +111,19 @@ $total_order = $select_order->rowCount();
     </div>
 </div>
 
-<?php include __DIR__ . '/../components/admin_footer.php'; ?>
+<?php include 'user_footer.php'; ?>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
 
 <script>
 <?php if(!empty($warning_msg)): ?>
-swal({
-    title: "Oops!",
-    text: "<?= implode("\n", $warning_msg); ?>",
-    icon: "error",
-    button: "Ok",
-});
+    swal("Oops!", "<?= implode('\\n', $warning_msg); ?>", "error");
 <?php elseif(!empty($success_msg)): ?>
-swal({
-    title: "Success!",
-    text: "<?= implode("\n", $success_msg); ?>",
-    icon: "success",
-    button: "Ok",
-});
+    swal("Success!", "<?= implode('\\n', $success_msg); ?>", "success");
 <?php endif; ?>
 </script>
 
-<script src="../js/admin_script.js"></script>
-<?php include __DIR__ . '/../components/alert.php'; ?>
+<script src="../js/user_script.js"></script>
 
 </body>
 </html>

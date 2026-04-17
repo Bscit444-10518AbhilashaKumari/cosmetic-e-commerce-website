@@ -1,51 +1,45 @@
 <?php
 session_start();
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-include __DIR__ . '/../components/connect.php';
+include 'connect.php';
 
 $warning_msg = [];
+$success_msg = [];
 
 if (isset($_POST['login'])) {
 
-    $email    = trim(filter_var($_POST['email'] ?? '', FILTER_SANITIZE_EMAIL));
+    $email = trim(filter_var($_POST['email'] ?? '', FILTER_SANITIZE_EMAIL));
     $password = $_POST['password'] ?? '';
 
     if (empty($email) || empty($password)) {
         $warning_msg[] = "All fields are required";
     } else {
 
-        // GET USER
         $stmt = $conn->prepare("
             SELECT id, name, password 
-            FROM sellers 
+            FROM users 
             WHERE email = :email 
             LIMIT 1
         ");
 
         $stmt->execute(['email' => $email]);
-        $seller = $stmt->fetch(PDO::FETCH_ASSOC);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($seller) {
+        if ($user) {
 
-            // ✅ PLAIN PASSWORD CHECK (NO HASH)
-            if ($password === $seller['password']) {
+            if ($password === $user['password']) {
 
                 session_regenerate_id(true);
+                $_SESSION['user_id'] = $user['id'];
 
-                $_SESSION['seller_id'] = $seller['id'];
-                $_SESSION['seller_name'] = $seller['name'];
+                // ✅ SUCCESS MESSAGE
+                $success_msg[] = "Login successful! Welcome " . $user['name'];
 
-                setcookie(
-                    'seller_id',
-                    $seller['id'],
-                    time() + (60 * 60 * 24 * 30),
-                    "/"
-                );
-
-                header("Location: dashboard.php");
-                exit;
+                // redirect after 1 sec
+                echo "<script>
+                    setTimeout(function(){
+                        window.location.href = 'home.php';
+                    }, 1000);
+                </script>";
 
             } else {
                 $warning_msg[] = "Incorrect password";
@@ -65,12 +59,15 @@ if (isset($_POST['login'])) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css">
+
 <link rel="stylesheet" href="../css/user_style.css?v=<?= time(); ?>">
 
 <title>Login</title>
 </head>
-
 <body>
+
+<?php include 'user_header.php'; ?>
 
 <div class="banner">
     <div class="detail">
@@ -79,34 +76,53 @@ if (isset($_POST['login'])) {
     </div>
 </div>
 
-<div class="form-container form" style="margin-left: 400px; margin-top: 50px;">
-    <form action="" method="post">
+<div class="form-container" style="margin-left:300px; margin-top:20px; margin-bottom:20px;">
+    <form action="" method="post" class="login">
 
         <h3>Login</h3>
 
-        <input type="email" name="email" placeholder="Enter email" required class="box">
+        <div class="input-field">
+            <p>Your email <span>*</span></p>
+            <input type="email" name="email" required class="box">
+        </div>
 
-        <input type="password" name="password" placeholder="Enter password" required class="box">
+        <div class="input-field">
+            <p>Your password <span>*</span></p>
+            <input type="password" name="password" required class="box">
+        </div>
+
+        <p>Don't have an account? <a href="register.php">Register now</a></p>
 
         <button type="submit" name="login" class="btn">Login</button>
-
-        <p>Don't have account? <a href="register.php">Register</a></p>
 
     </form>
 </div>
 
+<?php include 'user_footer.php'; ?>
+
+<!-- SWEETALERT -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
 
 <script>
 <?php if(!empty($warning_msg)): ?>
 swal({
     title: "Oops!",
-    text: "<?= implode("\\n", $warning_msg); ?>",
+    text: <?= json_encode(implode("\n", $warning_msg)) ?>,
     icon: "error",
+    button: "Ok",
+});
+
+<?php elseif(!empty($success_msg)): ?>
+swal({
+    title: "Success!",
+    text: <?= json_encode(implode("\n", $success_msg)) ?>,
+    icon: "success",
     button: "Ok",
 });
 <?php endif; ?>
 </script>
+
+<script src="../js/user_script.js"></script>
 
 </body>
 </html>

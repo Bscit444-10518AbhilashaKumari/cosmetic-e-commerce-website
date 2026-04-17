@@ -10,11 +10,6 @@ $success_msg = [];
 
 $user_id = $_SESSION['user_id'] ?? '';
 
-$seller_id = $_SESSION['seller_id'] ?? '';
-if($seller_id == ''){
-   header('location:login.php');
-   exit;
-}
 
 
 ?>
@@ -32,13 +27,13 @@ if($seller_id == ''){
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css">
 
 <!-- Custom CSS -->
-<link rel="stylesheet" href="../css/admin_style.css?v=<?= time(); ?>">
+<link rel="stylesheet" href="../css/user_style.css?v=<?= time(); ?>">
 
 <title>Cosmika A Cosmetic Website Template</title>
 </head>
 <body>
 
-<?php include __DIR__ . '/../components/admin_header.php'; ?>
+<?php include 'user_header.php'; ?>
 
 <div class="banner">
     <div class="detail">
@@ -46,19 +41,19 @@ if($seller_id == ''){
       <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Laudantium <br>
         modi neque aut, voluptatem saepe non nemo sequi quas, animi reiciendis <br>
         vitae doloremque sed facilis est illo quisquam fugit obcaecati omnis.</p>
-         <span><a href="dashboard.php">home</a><i class="bx bx-right-arrow-alt"></i>not found</span>
+         <span><a href="home.php">home</a><i class="bx bx-right-arrow-alt"></i>not found</span>
     </div>
 </div>
 
 <div class="not-found">
     <h1>OOPS!- could not find it</h1>
     <img src="../images/download.png"> <br>
-    <a href="dashboard.php" class="btn">back to dashboard</a>
+    <a href="home.php" class="btn">back to home</a>
 </div>
 
 
 
-<?php include __DIR__ . '/../components/admin_footer.php'; ?>
+<?php include 'user_footer.php'; ?>
 
 <!-- SweetAlert -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
@@ -80,7 +75,6 @@ if($seller_id == ''){
 <?php endif; ?>
 </script>
 
-<script src="../js/admin_script.js"></script>
-<?php include __DIR__ . '/../components/alert.php'; ?>
+<script src="../js/user_script.js"></script>
 </body>
 </html>
